@@ -84,6 +84,8 @@ public class MessageCodecHandler extends ByteToMessageCodec<RpcMessage> {
                 byteBuffer.flip();
                 byte[] content = new byte[byteBuffer.limit()];
                 byteBuffer.get(content);
+                // add body size
+                out.writeInt(content.length);
                 out.writeBytes(content);
                 out.writeBytes(msgCodec.encode());
             } else {
@@ -143,14 +145,30 @@ public class MessageCodecHandler extends ByteToMessageCodec<RpcMessage> {
 
         short bodyLength = 0;
         short typeCode = 0;
-        if (!isFescarCodec) { bodyLength = byteBuffer.getShort(); } else { typeCode = byteBuffer.getShort(); }
+        if (!isFescarCodec) {
+            bodyLength = byteBuffer.getShort();
+        } else {
+            // add by infinivision begin
+            // check type code and body size
+            if (in.readableBytes() < 6) {
+                in.readerIndex(begin);
+                return;
+            }
+            typeCode = byteBuffer.getShort();
+            if (in.readableBytes() < in.readInt()) {
+                in.readerIndex(begin);
+                return;
+            }
+            // add by infinivision end
+            // typeCode = byteBuffer.getShort();
+        }
         long msgId = byteBuffer.getLong();
 
         if (isHeartbeat) {
             RpcMessage rpcMessage = new RpcMessage();
             rpcMessage.setId(msgId);
             rpcMessage.setAsync(true);
-            rpcMessage.setHeartbeat(isHeartbeat);
+            rpcMessage.setHeartbeat(true);
             rpcMessage.setRequest(isRequest);
 
             if (isRequest) {
