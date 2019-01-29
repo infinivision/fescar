@@ -16,15 +16,19 @@
 
 package com.alibaba.fescar.core.protocol.transaction;
 
-import java.nio.ByteBuffer;
-
 import com.alibaba.fescar.core.model.BranchStatus;
-
+import com.alibaba.fescar.core.protocol.CodecHelper;
+import com.alibaba.fescar.core.protocol.ResultCode;
 import io.netty.buffer.ByteBuf;
 
-public abstract class AbstractBranchEndResponse extends AbstractTransactionResponse {
+import java.nio.ByteBuffer;
 
+public abstract class AbstractBranchEndResponse extends AbstractTransactionResponse {
     protected BranchStatus branchStatus;
+    // add by infinivision
+    protected String xid;
+    protected long branchId;
+    // add by infinivision
 
     public BranchStatus getBranchStatus() {
         return branchStatus;
@@ -37,28 +41,44 @@ public abstract class AbstractBranchEndResponse extends AbstractTransactionRespo
     @Override
     protected void doEncode() {
         super.doEncode();
-        byteBuffer.put((byte) branchStatus.ordinal());
+        CodecHelper.write(byteBuffer, xid);
+        CodecHelper.write(byteBuffer, branchId);
+        if (null != branchStatus) {
+            byteBuffer.put((byte) branchStatus.ordinal());
+        }
     }
 
     @Override
     public void decode(ByteBuffer byteBuffer) {
         super.decode(byteBuffer);
-        branchStatus = BranchStatus.get(byteBuffer.get());
+        setXid(CodecHelper.readString(byteBuffer));
+        setBranchId(CodecHelper.readLong(byteBuffer));
+        if (getResultCode() == ResultCode.Success) {
+            branchStatus = BranchStatus.get(byteBuffer.get());
+        }
     }
 
     @Override
     public boolean decode(ByteBuf in) {
-        boolean s = super.decode(in);
-        if (!s) {
-            return s;
+        if (!super.decode(in)) {
+            return false;
         }
-        branchStatus = BranchStatus.get(in.readByte());
+
+        setXid(CodecHelper.readString(in));
+        setBranchId(CodecHelper.readLong(in));
+        if (getResultCode() == ResultCode.Success) {
+            branchStatus = BranchStatus.get(in.readByte());
+        }
         return true;
     }
 
     @Override
     public String toString() {
         StringBuilder result = new StringBuilder();
+        result.append("Xid=");
+        result.append(xid);
+        result.append("branchId=");
+        result.append(branchId);
         result.append("branchStatus=");
         result.append(branchStatus);
         result.append(",");
@@ -69,5 +89,21 @@ public abstract class AbstractBranchEndResponse extends AbstractTransactionRespo
         result.append(getMsg());
 
         return result.toString();
+    }
+
+    public String getXid() {
+        return xid;
+    }
+
+    public void setXid(String xid) {
+        this.xid = xid;
+    }
+
+    public long getBranchId() {
+        return branchId;
+    }
+
+    public void setBranchId(long branchId) {
+        this.branchId = branchId;
     }
 }
