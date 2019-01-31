@@ -16,28 +16,26 @@
 
 package com.alibaba.fescar.rm.datasource;
 
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
-
 import com.alibaba.fescar.common.exception.NotSupportYetException;
+import com.alibaba.fescar.common.exception.ShouldNeverHappenException;
 import com.alibaba.fescar.common.thread.NamedThreadFactory;
 import com.alibaba.fescar.config.ConfigurationFactory;
 import com.alibaba.fescar.core.exception.TransactionException;
 import com.alibaba.fescar.core.model.BranchStatus;
 import com.alibaba.fescar.core.model.ResourceManagerInbound;
+import com.alibaba.fescar.core.protocol.AbstractMessage;
+import com.alibaba.fescar.core.protocol.transaction.BranchCommitResponse;
 import com.alibaba.fescar.rm.datasource.undo.UndoLogManager;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.*;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 
 import static com.alibaba.fescar.core.service.ConfigurationKeys.CLIENT_ASYNC_COMMIT_BUFFER_LIMIT;
 
@@ -47,40 +45,49 @@ public class AsyncWorker implements ResourceManagerInbound {
 
     private static class Phase2Context {
 
-        public Phase2Context(String xid, long branchId, String resourceId, String applicationData) {
+        public Phase2Context(String xid, long branchId, String resourceId, String applicationData, BranchCommitResponse response, Consumer<AbstractMessage> asyncAction) {
             this.xid = xid;
             this.branchId = branchId;
             this.resourceId = resourceId;
             this.applicationData = applicationData;
+            this.response = response;
+            this.asyncAction = asyncAction;
         }
 
         String xid;
         long branchId;
         String resourceId;
         String applicationData;
+        BranchCommitResponse response;
+        Consumer<AbstractMessage> asyncAction;
     }
 
     private static final List<Phase2Context> ASYNC_COMMIT_BUFFER = Collections.synchronizedList(new ArrayList<Phase2Context>());
 
     private static int ASYNC_COMMIT_BUFFER_LIMIT = ConfigurationFactory.getInstance().getInt(
-        CLIENT_ASYNC_COMMIT_BUFFER_LIMIT, 10000);
+            CLIENT_ASYNC_COMMIT_BUFFER_LIMIT, 10000);
 
     private static ScheduledExecutorService timerExecutor;
 
     @Override
     public BranchStatus branchCommit(String xid, long branchId, String resourceId, String applicationData) throws TransactionException {
+        throw new ShouldNeverHappenException("BranchCommitRequest must sent resp in async way");
+    }
+
+    public void branchCommit(String xid, long branchId, String resourceId, String applicationData, BranchCommitResponse response, Consumer<AbstractMessage> asyncAction) throws TransactionException {
         if (ASYNC_COMMIT_BUFFER.size() < ASYNC_COMMIT_BUFFER_LIMIT) {
-            ASYNC_COMMIT_BUFFER.add(new Phase2Context(xid, branchId, resourceId, applicationData));
+            ASYNC_COMMIT_BUFFER.add(new Phase2Context(xid, branchId, resourceId, applicationData, response, asyncAction));
         } else {
-            LOGGER.warn("Async commit buffer is FULL. Rejected branch [" + branchId + "/" + xid + "] will be handled by housekeeping later.");
+            LOGGER.info("AT Branch commit result: " + BranchStatus.PhaseTwo_CommitFailed_Retryable);
+            response.setBranchStatus(BranchStatus.PhaseTwo_CommitFailed_Retryable);
+            asyncAction.accept(response);
         }
-        return BranchStatus.PhaseTwo_Committed;
     }
 
     public synchronized void init() {
         LOGGER.info("Async Commit Buffer Limit: " + ASYNC_COMMIT_BUFFER_LIMIT);
         timerExecutor = new ScheduledThreadPoolExecutor(1,
-            new NamedThreadFactory("AsyncWorker", 1, true));
+                new NamedThreadFactory("AsyncWorker", 1, true));
         timerExecutor.scheduleAtFixedRate(new Runnable() {
             @Override
             public void run() {
@@ -116,26 +123,36 @@ public class AsyncWorker implements ResourceManagerInbound {
 
         }
 
-        for (String resourceId : mappedContexts.keySet()) {
+        for (Map.Entry<String, List<Phase2Context>> entry : mappedContexts.entrySet()) {
             Connection conn = null;
             try {
                 try {
-                    DataSourceProxy dataSourceProxy = DataSourceManager.get().get(resourceId);
+                    DataSourceProxy dataSourceProxy = DataSourceManager.get().get(entry.getKey());
                     conn = dataSourceProxy.getPlainConnection();
                 } catch (SQLException sqle) {
-                    LOGGER.warn("Failed to get connection for async committing on " + resourceId, sqle);
+                    LOGGER.warn("Failed to get connection for async committing on " + entry.getKey(), sqle);
+
+                    entry.getValue().forEach(e -> {
+                        LOGGER.info("AT Branch commit result: " + BranchStatus.PhaseTwo_CommitFailed_Retryable);
+                        e.response.setBranchStatus(BranchStatus.PhaseTwo_CommitFailed_Retryable);
+                        e.asyncAction.accept(e.response);
+                    });
                     continue;
                 }
 
-                List<Phase2Context> contextsGroupedByResourceId = mappedContexts.get(resourceId);
-                for (Phase2Context commitContext : contextsGroupedByResourceId) {
+                for (Phase2Context ctx : entry.getValue()) {
                     try {
-                        UndoLogManager.deleteUndoLog(commitContext.xid, commitContext.branchId, conn);
+                        UndoLogManager.deleteUndoLog(ctx.xid, ctx.branchId, conn);
+                        LOGGER.info("AT Branch commit result: " + BranchStatus.PhaseTwo_Committed);
+                        ctx.response.setBranchStatus(BranchStatus.PhaseTwo_Committed);
+                        ctx.asyncAction.accept(ctx.response);
                     } catch (Exception ex) {
-                        LOGGER.warn("Failed to delete undo log [" + commitContext.branchId + "/" + commitContext.xid + "]", ex);
+                        LOGGER.warn("Failed to delete undo log [" + ctx.branchId + "/" + ctx.xid + "]", ex);
+                        LOGGER.info("AT Branch commit result: " + BranchStatus.PhaseTwo_CommitFailed_Retryable);
+                        ctx.response.setBranchStatus(BranchStatus.PhaseTwo_CommitFailed_Retryable);
+                        ctx.asyncAction.accept(ctx.response);
                     }
                 }
-
             } finally {
                 if (conn != null) {
                     try {
@@ -145,11 +162,7 @@ public class AsyncWorker implements ResourceManagerInbound {
                     }
                 }
             }
-
-
         }
-
-
     }
 
     @Override

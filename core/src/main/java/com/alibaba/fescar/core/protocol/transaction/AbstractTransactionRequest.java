@@ -16,14 +16,19 @@
 
 package com.alibaba.fescar.core.protocol.transaction;
 
-import java.nio.ByteBuffer;
-
 import com.alibaba.fescar.core.protocol.AbstractMessage;
 import com.alibaba.fescar.core.rpc.RpcContext;
+
+import java.nio.ByteBuffer;
+import java.util.function.Consumer;
 
 public abstract class AbstractTransactionRequest extends AbstractMessage {
 
     protected ByteBuffer byteBuffer = ByteBuffer.allocate(1024);
 
     public abstract AbstractTransactionResponse handle(RpcContext rpcContext);
+
+    public void handle(RpcContext rpcContext, Consumer<AbstractMessage> asyncAction) {
+
+    }
 }

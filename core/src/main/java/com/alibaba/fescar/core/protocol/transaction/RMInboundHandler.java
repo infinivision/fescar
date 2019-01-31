@@ -16,9 +16,13 @@
 
 package com.alibaba.fescar.core.protocol.transaction;
 
+import com.alibaba.fescar.core.protocol.AbstractMessage;
+
+import java.util.function.Consumer;
+
 public interface RMInboundHandler {
 
-    BranchCommitResponse handle(BranchCommitRequest request);
+    void handle(BranchCommitRequest request, Consumer<AbstractMessage> asyncAction);
 
     BranchRollbackResponse handle(BranchRollbackRequest request);
 }

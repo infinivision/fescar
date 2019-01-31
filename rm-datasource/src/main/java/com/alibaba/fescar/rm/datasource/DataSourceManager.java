@@ -16,29 +16,22 @@
 
 package com.alibaba.fescar.rm.datasource;
 
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeoutException;
-
 import com.alibaba.fescar.common.XID;
 import com.alibaba.fescar.common.exception.NotSupportYetException;
 import com.alibaba.fescar.common.exception.ShouldNeverHappenException;
 import com.alibaba.fescar.core.exception.TransactionException;
 import com.alibaba.fescar.core.exception.TransactionExceptionCode;
-import com.alibaba.fescar.core.model.BranchStatus;
-import com.alibaba.fescar.core.model.BranchType;
-import com.alibaba.fescar.core.model.Resource;
-import com.alibaba.fescar.core.model.ResourceManager;
-import com.alibaba.fescar.core.model.ResourceManagerInbound;
+import com.alibaba.fescar.core.model.*;
+import com.alibaba.fescar.core.protocol.AbstractMessage;
 import com.alibaba.fescar.core.protocol.ResultCode;
-import com.alibaba.fescar.core.protocol.transaction.BranchRegisterRequest;
-import com.alibaba.fescar.core.protocol.transaction.BranchRegisterResponse;
-import com.alibaba.fescar.core.protocol.transaction.BranchReportRequest;
-import com.alibaba.fescar.core.protocol.transaction.BranchReportResponse;
-import com.alibaba.fescar.core.protocol.transaction.GlobalLockQueryRequest;
-import com.alibaba.fescar.core.protocol.transaction.GlobalLockQueryResponse;
+import com.alibaba.fescar.core.protocol.transaction.*;
 import com.alibaba.fescar.core.rpc.netty.RmRpcClient;
 import com.alibaba.fescar.rm.datasource.undo.UndoLogManager;
+
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeoutException;
+import java.util.function.Consumer;
 
 public class DataSourceManager implements ResourceManager {
 
@@ -151,7 +144,11 @@ public class DataSourceManager implements ResourceManager {
 
     @Override
     public BranchStatus branchCommit(String xid, long branchId, String resourceId, String applicationData) throws TransactionException {
-        return asyncWorker.branchCommit(xid, branchId, resourceId, applicationData);
+        throw new ShouldNeverHappenException("BranchCommitRequest must sent resp in async way");
+    }
+
+    public void branchCommit(String xid, long branchId, String resourceId, String applicationData, BranchCommitResponse response, Consumer<AbstractMessage> asyncAction) throws TransactionException {
+        asyncWorker.branchCommit(xid, branchId, resourceId, applicationData, response, asyncAction);
     }
 
     @Override

@@ -18,13 +18,14 @@ package com.alibaba.fescar.rm;
 
 import com.alibaba.fescar.core.exception.TransactionException;
 import com.alibaba.fescar.core.model.BranchStatus;
+import com.alibaba.fescar.core.protocol.AbstractMessage;
 import com.alibaba.fescar.core.protocol.transaction.*;
-import com.alibaba.fescar.core.protocol.transaction.BranchRollbackRequest;
 import com.alibaba.fescar.core.rpc.TransactionMessageHandler;
 import com.alibaba.fescar.rm.datasource.DataSourceManager;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.function.Consumer;
 
 public class RMHandlerAT extends AbstractRMHandlerAT implements RMInboundHandler, TransactionMessageHandler {
 
@@ -33,16 +34,13 @@ public class RMHandlerAT extends AbstractRMHandlerAT implements RMInboundHandler
     private DataSourceManager dataSourceManager = DataSourceManager.get();
 
     @Override
-    protected void doBranchCommit(BranchCommitRequest request, BranchCommitResponse response) throws TransactionException {
+    protected void doBranchCommit(BranchCommitRequest request, BranchCommitResponse response, Consumer<AbstractMessage> asyncAction) throws TransactionException {
         String xid = request.getXid();
         long branchId = request.getBranchId();
         String resourceId = request.getResourceId();
         String applicationData = request.getApplicationData();
         LOGGER.info("AT Branch committing: " + xid + " " + branchId + " " + resourceId + " " + applicationData);
-        BranchStatus status = dataSourceManager.branchCommit(xid, branchId, resourceId, applicationData);
-        response.setBranchStatus(status);
-        LOGGER.info("AT Branch commit result: " + status);
-
+        dataSourceManager.branchCommit(xid, branchId, resourceId, applicationData, response, asyncAction);
     }
 
     @Override

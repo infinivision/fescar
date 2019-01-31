@@ -19,6 +19,8 @@ package com.alibaba.fescar.core.rpc;
 import com.alibaba.fescar.core.protocol.AbstractMessage;
 import com.alibaba.fescar.core.protocol.AbstractResultMessage;
 
+import java.util.function.Consumer;
+
 /**
  * To handle the received RPC message on upper level.
  */
@@ -34,10 +36,21 @@ public interface TransactionMessageHandler {
     AbstractResultMessage onRequest(AbstractMessage request, RpcContext context);
 
     /**
+     * On a request received.
+     *
+     * @param request     received request message
+     * @param context     context of the RPC
+     * @param asyncAction async action
+     */
+    default void onRequest(AbstractMessage request, RpcContext context, Consumer<AbstractMessage> asyncAction) {
+
+    }
+
+    /**
      * On a response received.
      *
      * @param response received response message
-     * @param context context of the RPC
+     * @param context  context of the RPC
      */
     void onResponse(AbstractResultMessage response, RpcContext context);
 

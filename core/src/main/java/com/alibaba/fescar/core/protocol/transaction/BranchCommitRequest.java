@@ -16,8 +16,11 @@
 
 package com.alibaba.fescar.core.protocol.transaction;
 
+import com.alibaba.fescar.common.exception.ShouldNeverHappenException;
 import com.alibaba.fescar.core.protocol.AbstractMessage;
 import com.alibaba.fescar.core.rpc.RpcContext;
+
+import java.util.function.Consumer;
 
 public class BranchCommitRequest extends AbstractBranchEndRequest {
 
@@ -28,6 +31,10 @@ public class BranchCommitRequest extends AbstractBranchEndRequest {
 
     @Override
     public AbstractTransactionResponse handle(RpcContext rpcContext) {
-        return handler.handle(this);
+        throw new ShouldNeverHappenException("BranchCommitRequest must sent resp in async way");
+    }
+
+    public void handle(RpcContext rpcContext, Consumer<AbstractMessage> asyncAction) {
+        handler.handle(this, asyncAction);
     }
 }
