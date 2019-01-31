@@ -20,25 +20,9 @@ import com.alibaba.fescar.core.protocol.AbstractMessage;
 
 import java.util.function.Consumer;
 
-/**
- * The interface Rm inbound handler.
- */
 public interface RMInboundHandler {
 
-    /**
-     * Handle branch commit response.
-     *
-     * @param request the request
-     * @param asyncAction  async action
-     * @return the branch commit response
-     */
     void handle(BranchCommitRequest request, Consumer<AbstractMessage> asyncAction);
 
-    /**
-     * Handle branch rollback response.
-     *
-     * @param request the request
-     * @return the branch rollback response
-     */
     BranchRollbackResponse handle(BranchRollbackRequest request);
 }
