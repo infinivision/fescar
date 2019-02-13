@@ -150,18 +150,23 @@ public class MessageCodecHandler extends ByteToMessageCodec<RpcMessage> {
         } else {
             // add by infinivision begin
             // check type code and body size
-            if (in.readableBytes() < 6) {
-                in.readerIndex(begin);
-                return;
+            if (!isHeartbeat) {
+                // body size 4 bytes not enough
+                if (in.readableBytes() < 4) {
+                    in.readerIndex(begin);
+                    return;
+                }
+
+                // body size not enough
+                int body = in.readInt();
+                if (in.readableBytes() < body) {
+                    in.readerIndex(begin);
+                    return;
+                }
             }
+
             typeCode = byteBuffer.getShort();
-            int body = in.readInt();
-            if (in.readableBytes() < body) {
-                in.readerIndex(begin);
-                return;
-            }
             // add by infinivision end
-            // typeCode = byteBuffer.getShort();
         }
         long msgId = byteBuffer.getLong();
 
