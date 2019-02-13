@@ -30,7 +30,7 @@ import org.slf4j.LoggerFactory;
  * The type Rm message listener.
  *
  * @Author: jimin.jm @alibaba-inc.com
- * @Project: fescar-all
+ * @Project: fescar -all
  * @DateTime: 2018 /10/11 09:56
  * @FileName: RmMessageListener
  * @Description:
@@ -41,6 +41,11 @@ public class RmMessageListener implements ClientMessageListener {
 
     private TransactionMessageHandler handler;
 
+    /**
+     * Instantiates a new Rm message listener.
+     *
+     * @param handler the handler
+     */
     public RmMessageListener(TransactionMessageHandler handler) {
         this.handler = handler;
     }

@@ -21,7 +21,7 @@
     <parent>
         <artifactId>fescar-all</artifactId>
         <groupId>com.alibaba.fescar</groupId>
-        <version>0.1.2-SNAPSHOT</version>
+        <version>0.1.4</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
     <artifactId>fescar-core</artifactId>
@@ -44,10 +44,6 @@
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>fescar-config</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>${project.groupId}</groupId>
-            <artifactId>fescar-common</artifactId>
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>

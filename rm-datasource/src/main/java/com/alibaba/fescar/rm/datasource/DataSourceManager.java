@@ -39,6 +39,11 @@ public class DataSourceManager implements ResourceManager {
 
     private Map<String, Resource> dataSourceCache = new ConcurrentHashMap<>();
 
+    /**
+     * Sets async worker.
+     *
+     * @param asyncWorker the async worker
+     */
     public void setAsyncWorker(ResourceManagerInbound asyncWorker) {
         this.asyncWorker = asyncWorker;
     }
@@ -110,18 +115,36 @@ public class DataSourceManager implements ResourceManager {
         private static DataSourceManager INSTANCE = new DataSourceManager();
     }
 
+    /**
+     * Get data source manager.
+     *
+     * @return the data source manager
+     */
     public static DataSourceManager get() {
         return SingletonHolder.INSTANCE;
     }
 
+    /**
+     * Set.
+     *
+     * @param mock the mock
+     */
     public static void set(DataSourceManager mock) {
         SingletonHolder.INSTANCE = mock;
     }
 
+    /**
+     * Init.
+     *
+     * @param asyncWorker the async worker
+     */
     public static synchronized void init(ResourceManagerInbound asyncWorker) {
         get().setAsyncWorker(asyncWorker);
     }
 
+    /**
+     * Instantiates a new Data source manager.
+     */
     protected DataSourceManager() {
     }
 
@@ -138,6 +161,12 @@ public class DataSourceManager implements ResourceManager {
         throw new NotSupportYetException("unregister a resource");
     }
 
+    /**
+     * Get data source proxy.
+     *
+     * @param resourceId the resource id
+     * @return the data source proxy
+     */
     public DataSourceProxy get(String resourceId) {
         return (DataSourceProxy) dataSourceCache.get(resourceId);
     }

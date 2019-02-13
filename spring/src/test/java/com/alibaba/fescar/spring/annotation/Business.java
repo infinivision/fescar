@@ -14,15 +14,8 @@
  *  limitations under the License.
  */
 
-package com.alibaba.fescar.tm.dubbo;
+package com.alibaba.fescar.spring.annotation;
 
-public interface StorageService {
-
-    /**
-     * 扣减库存
-     *
-     * @param commodityCode 商品编号
-     * @param count 扣减数量
-     */
-    void deduct(String commodityCode, int count);
+public interface Business {
+    String doBiz(String msg);
 }
