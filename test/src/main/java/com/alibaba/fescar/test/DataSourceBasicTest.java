@@ -16,21 +16,20 @@
 
 package com.alibaba.fescar.test;
 
-import java.util.Date;
-
 import com.alibaba.fescar.core.context.RootContext;
 import com.alibaba.fescar.core.exception.TransactionException;
 import com.alibaba.fescar.core.model.BranchStatus;
 import com.alibaba.fescar.core.model.BranchType;
 import com.alibaba.fescar.core.model.Resource;
 import com.alibaba.fescar.rm.datasource.DataSourceManager;
-
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 import org.springframework.jdbc.core.JdbcTemplate;
+
+import java.util.Date;
 
 /**
  * The type Data source basic test.
@@ -39,11 +38,11 @@ import org.springframework.jdbc.core.JdbcTemplate;
 public class DataSourceBasicTest {
 
     private static String TABLE_CREATE_SQL = "CREATE TABLE `user0` (\n"
-        + "  `id` int(11) NOT NULL,\n"
-        + "  `name` varchar(255) DEFAULT NULL,\n"
-        + "  `gmt` datetime DEFAULT NULL,\n"
-        + "  PRIMARY KEY (`id`)\n"
-        + ") ENGINE=InnoDB DEFAULT CHARSET=utf8";
+            + "  `id` int(11) NOT NULL,\n"
+            + "  `name` varchar(255) DEFAULT NULL,\n"
+            + "  `gmt` datetime DEFAULT NULL,\n"
+            + "  PRIMARY KEY (`id`)\n"
+            + ") ENGINE=InnoDB DEFAULT CHARSET=utf8";
 
     private static ClassPathXmlApplicationContext context;
     private static JdbcTemplate jdbcTemplate;
@@ -56,7 +55,7 @@ public class DataSourceBasicTest {
     public void testInsert() {
         RootContext.bind("mock.xid");
         jdbcTemplate.update("insert into user0 (id, name, gmt) values (?, ?, ?)",
-            new Object[] {2, "xxx", new Date()});
+                new Object[]{2, "xxx", new Date()});
     }
 
     /**
@@ -65,7 +64,7 @@ public class DataSourceBasicTest {
     @Test
     public void testUpdate() {
         RootContext.bind("mock.xid");
-        jdbcTemplate.update("update user0 a set a.name = 'yyyy' where a.id = ?", new Object[] {1});
+        jdbcTemplate.update("update user0 a set a.name = 'yyyy' where a.id = ?", new Object[]{1});
     }
 
     /**
@@ -75,12 +74,12 @@ public class DataSourceBasicTest {
     public void testUpdateWithAlias1() {
 
         directJdbcTemplate.update("delete from User1 where Id = ?",
-            new Object[] {1});
+                new Object[]{1});
         directJdbcTemplate.update("insert into User1 (Id, Name, gMt) values (?, ?, ?)",
-            new Object[] {1, "xxx", new Date()});
+                new Object[]{1, "xxx", new Date()});
 
         RootContext.bind("mock.xid");
-        jdbcTemplate.update("update User1 a set a.Name = 'yyy' where a.Name = ?", new Object[] {"xxx"});
+        jdbcTemplate.update("update User1 a set a.Name = 'yyy' where a.Name = ?", new Object[]{"xxx"});
     }
 
     /**
@@ -89,7 +88,7 @@ public class DataSourceBasicTest {
     @Test
     public void testUpdateWithAlias() {
         RootContext.bind("mock.xid");
-        jdbcTemplate.update("update user0 a set a.name = 'yyyy' where a.name = ?", new Object[] {"yyyy"});
+        jdbcTemplate.update("update user0 a set a.name = 'yyyy' where a.name = ?", new Object[]{"yyyy"});
     }
 
     /**
@@ -98,7 +97,7 @@ public class DataSourceBasicTest {
     @Test
     public void testDelete() {
         RootContext.bind("mock.xid");
-        jdbcTemplate.update("delete from user0 where id = ?", new Object[] {2});
+        jdbcTemplate.update("delete from user0 where id = ?", new Object[]{2});
     }
 
     /**
@@ -107,7 +106,7 @@ public class DataSourceBasicTest {
     @Test
     public void testSelectForUpdate() {
         RootContext.bind("mock.xid");
-        jdbcTemplate.queryForRowSet("select a.name from user0 a where a.id = ? for update", new Object[] {1});
+        jdbcTemplate.queryForRowSet("select a.name from user0 a where a.id = ? for update", new Object[]{1});
     }
 
     /**
@@ -116,7 +115,7 @@ public class DataSourceBasicTest {
     @Test
     public void testSelectForUpdateWithAlias() {
         RootContext.bind("mock.xid");
-        jdbcTemplate.queryForRowSet("select a.name from user0 a where a.id = ? for update", new Object[] {1});
+        jdbcTemplate.queryForRowSet("select a.name from user0 a where a.id = ? for update", new Object[]{1});
     }
 
     /**
@@ -134,14 +133,14 @@ public class DataSourceBasicTest {
             }
 
             @Override
-            public void branchReport(String xid, long branchId, BranchStatus status, String applicationData)
-                throws TransactionException {
+            public void branchReport(String xid, String resourceId, long branchId, BranchStatus status, String applicationData)
+                    throws TransactionException {
 
             }
 
             @Override
             public boolean lockQuery(BranchType branchType, String resourceId, String xid, String lockKeys)
-                throws TransactionException {
+                    throws TransactionException {
                 return true;
             }
 
@@ -157,23 +156,23 @@ public class DataSourceBasicTest {
 
             @Override
             public BranchStatus branchCommit(String xid, long branchId, String resourceId, String applicationData)
-                throws TransactionException {
+                    throws TransactionException {
                 return BranchStatus.PhaseTwo_Committed;
             }
 
             @Override
             public BranchStatus branchRollback(String xid, long branchId, String resourceId, String applicationData)
-                throws TransactionException {
+                    throws TransactionException {
                 return BranchStatus.PhaseTwo_Rollbacked;
             }
         });
 
         context = new ClassPathXmlApplicationContext(
-            "basic-test-context.xml");
-        jdbcTemplate = (JdbcTemplate)context
-            .getBean("jdbcTemplate");
-        directJdbcTemplate = (JdbcTemplate)context
-            .getBean("directJdbcTemplate");
+                "basic-test-context.xml");
+        jdbcTemplate = (JdbcTemplate) context
+                .getBean("jdbcTemplate");
+        directJdbcTemplate = (JdbcTemplate) context
+                .getBean("directJdbcTemplate");
 
     }
 

@@ -35,18 +35,20 @@ public interface ResourceManagerOutbound {
      * @throws TransactionException the transaction exception
      */
     Long branchRegister(BranchType branchType, String resourceId, String clientId, String xid, String lockKeys) throws
-        TransactionException;
+            TransactionException;
 
     /**
      * Branch report.
      *
      * @param xid             the xid
+     * @param resourceId      the resource id
      * @param branchId        the branch id
      * @param status          the status
      * @param applicationData the application data
      * @throws TransactionException the transaction exception
+     * @Param resourceId the resource id
      */
-    void branchReport(String xid, long branchId, BranchStatus status, String applicationData) throws TransactionException;
+    void branchReport(String xid, String resourceId, long branchId, BranchStatus status, String applicationData) throws TransactionException;
 
     /**
      * Lock query boolean.

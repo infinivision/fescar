@@ -70,10 +70,11 @@ public class DataSourceManager implements ResourceManager {
     }
 
     @Override
-    public void branchReport(String xid, long branchId, BranchStatus status, String applicationData) throws TransactionException {
+    public void branchReport(String xid, String resourceId, long branchId, BranchStatus status, String applicationData) throws TransactionException {
         try {
             BranchReportRequest request = new BranchReportRequest();
             request.setTransactionId(XID.getTransactionId(xid));
+            request.setResourceId(resourceId);
             request.setBranchId(branchId);
             request.setStatus(status);
             request.setApplicationData(applicationData);

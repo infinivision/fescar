@@ -29,15 +29,10 @@ import com.alibaba.fescar.server.lock.LockManagerFactory;
 import com.alibaba.fescar.server.session.BranchSession;
 import com.alibaba.fescar.server.session.GlobalSession;
 import com.alibaba.fescar.server.session.SessionHolder;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static com.alibaba.fescar.core.exception.TransactionExceptionCode.BranchTransactionNotExist;
-import static com.alibaba.fescar.core.exception.TransactionExceptionCode.FailedToAddBranch;
-import static com.alibaba.fescar.core.exception.TransactionExceptionCode.GlobalTransactionNotActive;
-import static com.alibaba.fescar.core.exception.TransactionExceptionCode.GlobalTransactionStatusInvalid;
-import static com.alibaba.fescar.core.exception.TransactionExceptionCode.LockKeyConflict;
+import static com.alibaba.fescar.core.exception.TransactionExceptionCode.*;
 
 /**
  * The type Default core.
@@ -96,7 +91,7 @@ public class DefaultCore implements Core {
     }
 
     @Override
-    public void branchReport(String xid, long branchId, BranchStatus status, String applicationData) throws TransactionException {
+    public void branchReport(String xid, String resourceId, long branchId, BranchStatus status, String applicationData) throws TransactionException {
         GlobalSession globalSession = SessionHolder.findGlobalSession(XID.getTransactionId(xid));
         if (globalSession == null) {
             throw new TransactionException(TransactionExceptionCode.GlobalTransactionNotExist, "" + XID.getTransactionId(xid) + "");
@@ -121,7 +116,7 @@ public class DefaultCore implements Core {
     @Override
     public String begin(String applicationId, String transactionServiceGroup, String name, int timeout) throws TransactionException {
         GlobalSession session = GlobalSession.createGlobalSession(
-            applicationId, transactionServiceGroup, name, timeout);
+                applicationId, transactionServiceGroup, name, timeout);
         session.addSessionLifecycleListener(SessionHolder.getRootSessionManager());
 
         session.begin();
@@ -159,7 +154,7 @@ public class DefaultCore implements Core {
             }
             try {
                 BranchStatus branchStatus = resourceManagerInbound.branchCommit(XID.generateXID(branchSession.getTransactionId()), branchSession.getBranchId(),
-                    branchSession.getResourceId(), branchSession.getApplicationData());
+                        branchSession.getResourceId(), branchSession.getApplicationData());
 
                 switch (branchStatus) {
                     case PhaseTwo_Committed:
@@ -173,7 +168,7 @@ public class DefaultCore implements Core {
                             globalSession.changeStatus(GlobalStatus.CommitFailed);
                             globalSession.end();
                             LOGGER.error("Finally, failed to commit global[{}] since branch[{}] commit failed",
-                                globalSession.getTransactionId(), branchSession.getBranchId());
+                                    globalSession.getTransactionId(), branchSession.getBranchId());
                             return;
                         }
                     default:
@@ -186,8 +181,8 @@ public class DefaultCore implements Core {
                             continue;
                         } else {
                             LOGGER.error(
-                                "Failed to commit global[{}] since branch[{}] commit failed, will retry later.",
-                                globalSession.getTransactionId(), branchSession.getBranchId());
+                                    "Failed to commit global[{}] since branch[{}] commit failed, will retry later.",
+                                    globalSession.getTransactionId(), branchSession.getBranchId());
                             return;
                         }
 
@@ -265,7 +260,7 @@ public class DefaultCore implements Core {
             }
             try {
                 BranchStatus branchStatus = resourceManagerInbound.branchRollback(XID.generateXID(branchSession.getTransactionId()), branchSession.getBranchId(),
-                    branchSession.getResourceId(), branchSession.getApplicationData());
+                        branchSession.getResourceId(), branchSession.getApplicationData());
 
                 switch (branchStatus) {
                     case PhaseTwo_Rollbacked:
