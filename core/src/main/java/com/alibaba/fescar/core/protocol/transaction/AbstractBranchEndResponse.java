@@ -24,16 +24,30 @@ import io.netty.buffer.ByteBuf;
 import java.nio.ByteBuffer;
 
 public abstract class AbstractBranchEndResponse extends AbstractTransactionResponse {
+
+    /**
+     * The Branch status.
+     */
     protected BranchStatus branchStatus;
     // add by infinivision
     protected String xid;
     protected long branchId;
     // add by infinivision
 
+    /**
+     * Gets branch status.
+     *
+     * @return the branch status
+     */
     public BranchStatus getBranchStatus() {
         return branchStatus;
     }
 
+    /**
+     * Sets branch status.
+     *
+     * @param branchStatus the branch status
+     */
     public void setBranchStatus(BranchStatus branchStatus) {
         this.branchStatus = branchStatus;
     }
@@ -44,7 +58,7 @@ public abstract class AbstractBranchEndResponse extends AbstractTransactionRespo
         CodecHelper.write(byteBuffer, xid);
         CodecHelper.write(byteBuffer, branchId);
         if (null != branchStatus) {
-            byteBuffer.put((byte) branchStatus.ordinal());
+            byteBuffer.put((byte) branchStatus.getCode());
         }
     }
 

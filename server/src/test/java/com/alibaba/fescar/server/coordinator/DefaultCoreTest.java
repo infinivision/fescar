@@ -123,7 +123,7 @@ public class DefaultCoreTest {
     @Test(dataProvider = "xidProvider")
     public void commitTest(String xid) throws Exception {
         GlobalStatus globalStatus = core.commit(xid);
-        Assert.assertEquals(globalStatus, GlobalStatus.Begin);
+        Assert.assertNotEquals(globalStatus, GlobalStatus.Begin);
     }
 
     /**
