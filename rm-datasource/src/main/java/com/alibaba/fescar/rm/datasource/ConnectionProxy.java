@@ -68,6 +68,22 @@ public class ConnectionProxy extends AbstractConnectionProxy {
     }
 
     /**
+     * set global lock requires flag
+     *
+     * @param isLock whether to lock
+     */
+    public void setGlobalLockRequire(boolean isLock) {
+        context.setGlobalLockRequire(isLock);
+    }
+
+    /**
+     * get global lock requires flag
+     */
+    public boolean isGlobalLockRequire() {
+        return context.isGlobalLockRequire();
+    }
+
+    /**
      * Check lock.
      *
      * @param lockKeys the lockKeys
@@ -76,7 +92,8 @@ public class ConnectionProxy extends AbstractConnectionProxy {
     public void checkLock(String lockKeys) throws SQLException {
         // Just check lock without requiring lock by now.
         try {
-            boolean lockable = DataSourceManager.get().lockQuery(BranchType.AT, getDataSourceProxy().getResourceId(), context.getXid(), lockKeys);
+            boolean lockable = DataSourceManager.get().lockQuery(BranchType.AT, getDataSourceProxy().getResourceId(),
+                context.getXid(), lockKeys);
             if (!lockable) {
                 throw new LockConflictException();
             }
@@ -112,7 +129,7 @@ public class ConnectionProxy extends AbstractConnectionProxy {
     /**
      * append sqlUndoLog
      *
-     * @param sqlUndoLog
+     * @param sqlUndoLog the sql undo log
      */
     public void appendUndoLog(SQLUndoLog sqlUndoLog) {
         context.appendUndoItem(sqlUndoLog);
@@ -121,7 +138,7 @@ public class ConnectionProxy extends AbstractConnectionProxy {
     /**
      * append lockKey
      *
-     * @param lockKey
+     * @param lockKey the lock key
      */
     public void appendLockKey(String lockKey) {
         context.appendLockKey(lockKey);
@@ -130,31 +147,45 @@ public class ConnectionProxy extends AbstractConnectionProxy {
     @Override
     public void commit() throws SQLException {
         if (context.inGlobalTransaction()) {
-            try {
-                register();
-            } catch (TransactionException e) {
-                recognizeLockKeyConflictException(e);
-            }
-
-            try {
-                if (context.hasUndoLog()) {
-                    UndoLogManager.flushUndoLogs(this);
-                }
-                targetConnection.commit();
-            } catch (Throwable ex) {
-                report(false);
-                if (ex instanceof SQLException) {
-                    throw (SQLException) ex;
-                } else {
-                    throw new SQLException(ex);
-                }
-            }
-            report(true);
-            context.reset();
-
+            processGlobalTransactionCommit();
+        } else if (context.isGlobalLockRequire()) {
+            processLocalCommitWithGlobalLocks();
         } else {
             targetConnection.commit();
         }
+    }
+
+    private void processLocalCommitWithGlobalLocks() throws SQLException {
+
+        checkLock(context.buildLockKeys());
+        try {
+            targetConnection.commit();
+        } catch (Throwable ex) {
+            throw new SQLException(ex);
+        }
+        context.reset();
+    }
+
+    private void processGlobalTransactionCommit() throws SQLException {
+        try {
+            register();
+        } catch (TransactionException e) {
+            recognizeLockKeyConflictException(e);
+        }
+
+        try {
+            if (context.hasUndoLog()) {
+                UndoLogManager.flushUndoLogs(this);
+            }
+            targetConnection.commit();
+        } catch (Throwable ex) {
+            report(false);
+            if (ex instanceof SQLException) {
+                throw new SQLException(ex);
+            }
+        }
+        report(true);
+        context.reset();
     }
 
     private void register() throws TransactionException {
@@ -191,7 +222,8 @@ public class ConnectionProxy extends AbstractConnectionProxy {
                         (commitDone ? BranchStatus.PhaseOne_Done : BranchStatus.PhaseOne_Failed), null);
                 return;
             } catch (Throwable ex) {
-                LOGGER.error("Failed to report [" + context.getBranchId() + "/" + context.getXid() + "] commit done [" + commitDone + "] Retry Countdown: " + retry);
+                LOGGER.error("Failed to report [" + context.getBranchId() + "/" + context.getXid() + "] commit done ["
+                    + commitDone + "] Retry Countdown: " + retry);
                 retry--;
 
                 if (retry == 0) {

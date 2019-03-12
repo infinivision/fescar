@@ -37,7 +37,8 @@ public interface ResourceManagerInbound {
      * @return Status of the branch after committing.
      * @throws TransactionException Any exception that fails this will be wrapped with TransactionException and thrown out.
      */
-    BranchStatus branchCommit(String xid, long branchId, String resourceId, String applicationData) throws TransactionException;
+    BranchStatus branchCommit(String xid, long branchId, String resourceId, String applicationData)
+        throws TransactionException;
 
     /**
      * Commit a branch transaction.
@@ -63,5 +64,6 @@ public interface ResourceManagerInbound {
      * @return Status of the branch after rollbacking.
      * @throws TransactionException Any exception that fails this will be wrapped with TransactionException and thrown out.
      */
-    BranchStatus branchRollback(String xid, long branchId, String resourceId, String applicationData) throws TransactionException;
+    BranchStatus branchRollback(String xid, long branchId, String resourceId, String applicationData)
+        throws TransactionException;
 }
