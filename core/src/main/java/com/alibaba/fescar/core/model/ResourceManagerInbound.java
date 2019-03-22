@@ -19,7 +19,6 @@ package com.alibaba.fescar.core.model;
 import com.alibaba.fescar.core.exception.TransactionException;
 import com.alibaba.fescar.core.protocol.AbstractMessage;
 import com.alibaba.fescar.core.protocol.transaction.BranchCommitResponse;
-
 import java.util.function.Consumer;
 
 /**
@@ -30,40 +29,48 @@ public interface ResourceManagerInbound {
     /**
      * Commit a branch transaction.
      *
-     * @param xid             Transaction id.
-     * @param branchId        Branch id.
-     * @param resourceId      Resource id.
+     * @param branchType the branch type
+     * @param xid Transaction id.
+     * @param branchId Branch id.
+     * @param resourceId Resource id.
      * @param applicationData Application data bind with this branch.
      * @return Status of the branch after committing.
-     * @throws TransactionException Any exception that fails this will be wrapped with TransactionException and thrown out.
+     * @throws TransactionException Any exception that fails this will be wrapped with TransactionException and thrown
+     * out.
      */
-    BranchStatus branchCommit(String xid, long branchId, String resourceId, String applicationData)
-        throws TransactionException;
+    BranchStatus branchCommit(BranchType branchType, String xid, long branchId, String resourceId,
+        String applicationData) throws TransactionException;
 
     /**
      * Commit a branch transaction.
      *
-     * @param xid             Transaction id.
-     * @param branchId        Branch id.
-     * @param resourceId      Resource id.
+     * @param branchType the branch type
+     * @param xid Transaction id.
+     * @param branchId Branch id.
+     * @param resourceId Resource id.
      * @param applicationData Application data bind with this branch.
-     * @param asyncAction     async action
-     * @throws TransactionException Any exception that fails this will be wrapped with TransactionException and thrown out.
+     * @param asyncAction async action
+     * @throws TransactionException Any exception that fails this will be wrapped with TransactionException and thrown
+     * out.
      */
-    default void branchCommit(String xid, long branchId, String resourceId, String applicationData, BranchCommitResponse response, Consumer<AbstractMessage> asyncAction) throws TransactionException {
+    default void branchCommit(BranchType branchType, String xid, long branchId, String resourceId,
+        String applicationData, BranchCommitResponse response,
+        Consumer<AbstractMessage> asyncAction) throws TransactionException {
 
     }
 
     /**
      * Rollback a branch transaction.
      *
-     * @param xid             Transaction id.
-     * @param branchId        Branch id.
-     * @param resourceId      Resource id.
+     * @param branchType the branch type
+     * @param xid Transaction id.
+     * @param branchId Branch id.
+     * @param resourceId Resource id.
      * @param applicationData Application data bind with this branch.
      * @return Status of the branch after rollbacking.
-     * @throws TransactionException Any exception that fails this will be wrapped with TransactionException and thrown out.
+     * @throws TransactionException Any exception that fails this will be wrapped with TransactionException and thrown
+     * out.
      */
-    BranchStatus branchRollback(String xid, long branchId, String resourceId, String applicationData)
-        throws TransactionException;
+    BranchStatus branchRollback(BranchType branchType, String xid, long branchId, String resourceId,
+        String applicationData) throws TransactionException;
 }
